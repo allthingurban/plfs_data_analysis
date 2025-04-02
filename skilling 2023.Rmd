@@ -1,0 +1,75 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(pollster)
+library(arrow)
+```
+
+
+```{r}
+plfs_2023_hhv1=read_dta("/datacalendar_year/2023/plfs_2023_hhv1.parquet")
+plfs_2023_perv1=read_dta("data/calendar_year/2023/plfs_2023_perv1.parquet")
+```
+
+```{r}
+plfs_2023_perv1%>%
+   type.convert(as.is=T)%>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(nss_cperv1==nsc_cperv1,mult_cperv1/400,mult_cperv1/800),
+          general_education=case_when(b4q9_cperv1!=1~"Technical Education",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(1,2,3)~"No General Education",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(5,6,7,8,10)~"Attended School",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(11,12,13)~"Attended College"))%>%
+    filter(age_group %in% c("15-59"))%>% # Age filter
+  crosstab(x=b4q5_cperv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+```
+
+
+```{r}
+plfs_2023_perv1%>%
+   type.convert(as.is=T)%>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(nss_cperv1==nsc_cperv1,mult_cperv1/400,mult_cperv1/800),
+          general_education=case_when(b4q9_cperv1!=1~"Technical Education",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(1,2,3)~"No General Education",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(5,6,7,8,10)~"Attended School",
+                                      b4q9_cperv1==1 & b4q8_cperv1 %in% c(11,12,13)~"Attended College"))%>%
+    filter(age_group %in% c("15-59"))%>% # Age filter
+  crosstab(x=b1q3_cperv1,y=b4q12_cperv1,weight = weight_f,unwt_n = TRUE)
+```
+
+```{r}
+plfs_2023_perv1%>%
+  type.convert(as.is=T)%>%
+  filter(b4q6_perv1>14 & b4q6_perv1<60)%>% #Age filter
+  merge(plfs_2023_hhv1%>% #Merge for Caste
+          type.convert(as.is=T)%>%
+          select(4,14:17,25),
+        by.x = c("qtr_cperv1","b1q1_cperv1","b1q13_cperv1","b1q14_cperv1","b1q15_cperv1"),
+        by.y =c("qtr_chhv1","b1q1_chhv1","b1q13_chhv1","b1q14_chhv1","b1q15_chhv1"),
+        all.x = TRUE)%>%
+  mutate(dummy_area="All India",#Dummy variable for all india
+         weight_f =  if_else(nss_cperv1==nsc_cperv1,mult_cperv1/400,mult_cperv1/800))%>%
+  crosstab(x=b3q4_chhv1,y=b4q12_cperv1,weight = weight_f,unwt_n = TRUE)#caste
+```
+
+
+```{r}
+#x=Rural/urban, y=Type of training
+plfs_2023_perv1 %>%filter(b4q6_perv1>14 & b4q6_perv1<60)%>%
+  type.convert(as.is=T)%>%
+  mutate(dummy_area="All India",
+         weight_f =  if_else(nss_cperv1==nsc_cperv1,mult_cperv1/400,mult_cperv1/800))%>%
+  crosstab(x=b1q3_cperv1,y=b4q12_cperv1,weight = weight_f,unwt_n = TRUE)
+```
+
