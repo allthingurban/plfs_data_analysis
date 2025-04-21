@@ -11,12 +11,13 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 library(tidyverse)
 library(pollster)
 library(haven)
+library(arrow)
 ```
 
 ```{r}
 
-plfs_2024_hhv1=read_dta("data/calendar_year/2024/plfs_2024_hhv1.parquet")
-plfs_2024_perv1=read_dta("data/calendar_year/2024/plfs_2024_perv1.parquet")
+plfs_2024_hhv1=read_parquet("data/calendar_year/2024/plfs_2024_hhv1.parquet")
+plfs_2024_perv1=read_parquet("data/calendar_year/2024/plfs_2024_perv1.parquet")
 ```
 
 col. (8):
@@ -411,5 +412,71 @@ plfs_2024_perv1 %>%
   type.convert(as.is=T)%>%
   filter(age_group %in% c("15-59") & labour_force=="Yes")%>%
   crosstab(x=b3q4_hhv1,y=nco_2digit,weight = weight_f,format = "wide")
+```
+
+less than 3 months -1, 
+3 months or more but less than 6 months-2, 
+6 months or more but less than 12 months-3,
+12 months or more but less than 18 months-4, 
+18 months or more but less than 24 months-5, 
+24 months or more-6
+
+worked in h.h. enterprise (self-employed): 
+own account worker -11, 
+employer-12, 
+worked as helper in h.h. enterprise (unpaid family worker) -21; 
+worked as regular salaried/ wage employee -31, 
+worked as casual wage labour: in public works -41, 
+in other types of work -51; 
+did not work but was seeking and/or available for work -81, 
+attended educational institution -91, 
+attended domestic duties only -92, 
+attended domestic duties and was also engaged in free collection of goods (vegetables, roots, firewood, cattle feed, etc.), sewing, tailoring, weaving, etc. for household use -93, 
+rentiers, pensioners , remittance recipients, etc. -94, 
+not able to work due to disability -95, 
+others (including begging, prostitution, etc.) -97.
+
+```{r}
+#Duration of Training
+plfs_2024_perv1 %>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
+          labour_force=if_else(as.numeric(b5pt1q3_perv1)<=81 | b5pt1q7_perv1==1,"Yes","No"),
+          type_of_employment=case_when(b5pt1q3_perv1 %in% c(11,12)~"Self-Employed",
+                                       b5pt1q3_perv1 %in% c(31)~"Wage Employment",
+                                       b5pt1q3_perv1 %in% c(41,51)~"Casual Wage Labour",
+                                       b5pt1q3_perv1 %in% c(81)~"Unemployed",
+                                       b5pt1q3_perv1 %in% c(91)~"Education",
+                                       b5pt1q3_perv1 %in% c(21,92,93)~"Unpaid Work",
+                                       b5pt1q3_perv1 %in% c(94,95,97)~"Others"))%>%
+  type.convert(as.is=T)%>%
+  filter(age_group %in% c("15-59"))%>%
+  #group_by(b4pt1q5_perv1)%>%
+  #summarise(mean_wage=weighted.mean((b6q9_perv1+b6q10_perv1),w = weight_f))
+  #spread(key = "type_of_employment", value = "mean_wage")
+  crosstab(x=b4pt1q7_perv1,y=type_of_employment,weight = weight_f,format = "wide",unwt_n = TRUE)
+```
+
+```{r}
+plfs_2024_perv1 %>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
+          labour_force=if_else(as.numeric(b5pt1q3_perv1)<=81 | b5pt1q7_perv1==1,"Yes","No"),
+          type_of_employment=case_when(b5pt1q3_perv1 %in% c(11,12)~"Self-Employed",
+                                       b5pt1q3_perv1 %in% c(31)~"Wage Employment",
+                                       b5pt1q3_perv1 %in% c(41,51)~"Casual Wage Labour",
+                                       b5pt1q3_perv1 %in% c(81)~"Unemployed",
+                                       b5pt1q3_perv1 %in% c(91)~"Education",
+                                       b5pt1q3_perv1 %in% c(21,92,93)~"Unpaid Work",
+                                       b5pt1q3_perv1 %in% c(94,95,97)~"Others"))%>%
+  type.convert(as.is=T)%>%
+  filter(age_group %in% c("15-59"))%>%
+  crosstab(y=type_of_employment,x=b4q12_perv1,weight = weight_f,format = "wide",unwt_n = TRUE)
 ```
 
