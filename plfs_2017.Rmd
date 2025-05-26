@@ -1,0 +1,143 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(pollster)
+library(tidyverse)
+library(arrow)
+```
+
+
+```{r}
+per_fv_2017=read_parquet("./data/financial year/plfs_per_fv_2017.parquet")
+hh_fv_2017=read_parquet("./data/financial year/plfs_hh_fv_2017.parquet")
+```
+
+
+```{r}
+#Add constructed variable
+#Any new variable should be added in this code block(important and necessary)
+per_fv_2017=per_fv_2017%>%
+  mutate(nic_2digit_principal=substr(b5pt1q5_per_fv,1,2),
+         nic_3digit_principal=substr(b5pt1q5_per_fv,1,3),
+         nco_1digit_principal=substr(b5pt1q6_per_fv,1,1))%>%
+  type.convert(as.is=T)%>%
+  mutate(dummy_area="All India",
+          age_group=case_when(b4q6_per_fv<15~"0-15",
+                              b4q6_per_fv>=15 & b4q6_per_fv<30~"15-29",
+                              b4q6_per_fv>=30 & b4q6_per_fv<50~"30-49",
+                              b4q6_per_fv>=50 & b4q6_per_fv<60~"50-59",
+                              b4q6_per_fv>=60~"60 and Above"),
+         labour_force=if_else(b5pt1q3_per_fv<=81 | b5pt1q7_per_fv==1,"Yes","No"),
+         worker_yn=if_else(b5pt1q3_per_fv<81 | b5pt1q7_per_fv==1,"Yes","No"),
+         weight_f =  if_else(NSS_per_fv==NSC_per_fv,MULT_per_fv/400,MULT_per_fv/800),
+         working_age_yn=age_group %in% c("15-29","30-49","50-59"),"Yes","No")
+```
+
+
+```{r}
+#Total Working age population
+total_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59")) %>% 
+                           select(weight_f))
+#Working age population - Rural
+rural_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==1) %>% 
+                           select(weight_f))
+#Working age population - Urban
+urban_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==2) %>% 
+                           select(weight_f))
+#Working age population - Male
+male_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b4q5_per_fv==1) %>% 
+                           select(weight_f))
+#Working age population - Female
+female_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b4q5_per_fv==2) %>% 
+                           select(weight_f))
+#Working age population - Rural Male
+rural_male_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==1 & b4q5_per_fv==1) %>% 
+                           select(weight_f))
+#Total Working age population - Rural Female
+rural_female_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==1 & b4q5_per_fv==2) %>% 
+                           select(weight_f))
+#Total Working age population - Urban Male
+male_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==2 & b4q5_per_fv==1) %>% 
+                           select(weight_f))
+#Total Working age population - Urban Female
+female_workin_age_pop=sum(per_fv_2017%>%
+                           filter(age_group %in% c("15-29","30-49","50-59") & b1q3_per_fv==2 & b4q5_per_fv==2) %>% 
+                           select(weight_f))
+
+```
+
+
+
+```{r}
+#b5pt1q9_per_fv: principal enterprise type code, 
+#b4q5_per_fv: Sex,
+#b5pt1q9_per_fv:Location of Enterprise,
+#b1q3_per_fv: Sector
+
+per_fv_2017 %>%
+  mutate(
+    location_work = if_else(is.na(b5pt1q8_per_fv) & !nic_3digit_principal %in% c(11,12,13,15) & worker_yn=="Yes",b5pt2q7_per_fv,b5pt1q8_per_fv))%>%
+  filter(working_age_yn == TRUE &
+           worker_yn == "Yes") %>%
+  crosstab_3way(
+    x = dummy_area,
+    z=b4q5_per_fv,
+    y = location_work,
+    weight = weight_f,
+    unwt_n = TRUE,
+    format = "long"
+  )
+  
+```
+
+```{r}
+per_fv_2017%>%
+  mutate(location_work=case_when(labour_force=="Yes" & is.na(b5pt1q8_per_fv)~b5pt2q7_per_fv,
+                                 labour_force=="Yes" &!is.na(b5pt1q8_per_fv)~b5pt1q8_per_fv,
+                                 labour_force=="No"~NA))%>%
+  filter(age_group %in% c("15-29","30-49","50-59") & labour_force=="Yes")%>%
+  summarise(sum(weight_f)*100/total_workin_age_pop)
+
+
+
+```
+
+
+#Condition for Unemployment: if_else(b5pt1q3_per_fv==81 | b5pt1q7_per_fv==2,"Yes","No")
+#Condition for worker: if_else(b5pt1q3_per_fv<81 | b5pt1q7_per_fv==1,"Yes","No")
+#Condition for Labour force: if_else(b5pt1q3_per_fv==81 | b5pt1q7_per_fv==2,"Yes","No")
+
+```{r}
+#Enterprise Type Code
+
+per_fv_2017 %>%
+  mutate(ent_type_code=case_when(labour_force=="Yes" & worker_yn=="No" ~ b5pt2q8_per_fv,
+                                 labour_force=="Yes" & worker_yn=="Yes"~ b5pt1q9_per_fv,
+                                 labour_force=="No"~NA))%>%
+  filter(worker_yn=="Yes" & working_age_yn==TRUE)%>%
+  crosstab_3way(x=b1q3_per_fv,z=b4q5_per_fv,y=ent_type_code,weight = weight_f)
+```
+```{r}
+per_fv_2017 %>%
+  mutate(nic_2digit_code=case_when(labour_force=="Yes" & worker_yn=="No" ~ nic_2digit_subsidiary,
+                                  labour_force=="Yes" & worker_yn=="Yes"~ nic_2digit_principal,
+                                 labour_force=="No"~NA))%>%
+  filter(worker_yn=="Yes" & working_age_yn==TRUE)%>%
+  crosstab_3way(x=b1q3_per_fv,z=b4q5_per_fv,y=nic_2digit_code,weight = weight_f,format = "long")%>%
+  merge(nic_mapping,by.x = "nic_2digit_code",by.y ="Division",all.x = TRUE)%>%
+  group_by(b1q3_per_fv,b4q5_per_fv,Section,Section_Name)%>%
+  summarise(prop_division=sum(pct))
+```
+

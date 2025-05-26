@@ -1,0 +1,53 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+per_fv_2022=read_parquet("./data/financial year/plfs_per_fv_2022.parquet")
+hh_fv_2022=read_parquet("./data/financial year/plfs_hh_v1_2022.parquet")
+```
+
+
+```{r}
+per_fv_2022=per_fv_2022%>%
+  mutate(nic_2digit_principal=substr(b5pt1q5_perv1,1,2),
+         nic_3digit_principal=substr(b5pt1q5_perv1,1,3),
+         nco_1digit_principal=substr(b5pt1q6_perv1,1,1))%>%
+  type.convert(as.is=T)%>%
+  mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<30~"15-29",
+                              b4q6_perv1>=30 & b4q6_perv1<50~"30-49",
+                              b4q6_perv1>=50 & b4q6_perv1<60~"50-59",
+                              b4q6_perv1>=60~"60 and Above"),
+         labour_force=if_else(b5pt1q3_perv1<=81 | b5pt1q7_perv1==1,"Yes","No"),
+         worker_yn=if_else(b5pt1q3_perv1<81 | b5pt1q7_perv1==1,"Yes","No"),
+         weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
+         working_age_yn=age_group %in% c("15-29","30-49","50-59"),"Yes","No")
+```
+
+```{r}
+#b5pt1q9_perv1: principal enterprise type code, 
+#b4q5_perv1: Sex,
+#b5pt1q9_perv1:Location of Enterprise,
+#b1q3_perv1: Sector
+per_fv_2022 %>%
+  mutate(
+    location_work = if_else(is.na(b5pt1q8_perv1) & !nic_3digit_principal %in% c(11,12,13,15) & worker_yn=="Yes",b5pt2q7_perv1,b5pt1q8_perv1))%>%
+  filter(working_age_yn == TRUE &
+           worker_yn == "Yes") %>%
+  crosstab_3way(
+    x = b1q3_perv1,
+    z= b4q5_perv1,
+    y = location_work,
+    weight = weight_f,
+    unwt_n = TRUE,
+    format = "long"
+  )
+```
+
