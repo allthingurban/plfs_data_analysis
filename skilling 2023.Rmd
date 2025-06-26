@@ -73,3 +73,37 @@ plfs_2023_perv1 %>%filter(b4q6_perv1>14 & b4q6_perv1<60)%>%
   crosstab(x=b1q3_cperv1,y=b4q12_cperv1,weight = weight_f,unwt_n = TRUE)
 ```
 
+```{r}
+#General Education
+per_fv_2022%>%
+   type.convert(as.is=T)%>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
+          general_education=case_when(b4q9_perv1!=1~"Technical Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(1,2,3)~"No General Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(5,6,7,8,10)~"Attended School",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(11,12,13)~"Attended College"))%>%
+    filter(age_group %in% c("15-59"))%>% # Age filter
+  crosstab(x=b4q5_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+
+per_fv_2022%>%
+   type.convert(as.is=T)%>%
+   mutate(dummy_area="All India",
+          age_group=case_when(b4q6_perv1<15~"0-15",
+                              b4q6_perv1>=15 & b4q6_perv1<60~"15-59",
+                              b4q6_perv1>=60~"60 and Above"),
+          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
+          general_education=case_when(b4q9_perv1!=1~"Technical Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(1,2,3)~"No General Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(5,6,7,8,10)~"Attended School",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(11,12,13)~"Attended College"))%>%
+    filter(age_group %in% c("15-59"))%>% # Age and working Status filter
+   filter(b1q3_perv1==1)%>%
+  #crosstab(x=b1q3_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+  crosstab_3way(x=b4q5_perv1,z=general_education,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+  #crosstab_3way(x=b1q3_perv1,z=b4q5_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+```
+

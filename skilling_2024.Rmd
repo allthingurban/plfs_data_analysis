@@ -58,10 +58,29 @@ diploma or certificate (graduate and above level) in:
   crafts -15, 
   other subjects -16.
 
+```{r}
+data_model=per_fv_2023 %>%
+  select(b4q12_perv1,b1q3_perv1,b4q5_perv1,b4q8_perv1,b4q9_perv1,b5pt1q3_perv1,b6q9_perv1,b6q10_perv1)%>%
+  mutate(training_type=as.factor(case_when(b4q12_perv1==1~"Formal",
+                                 b4q12_perv1 %in% c(1,2,3,4,5)~"Informal",
+                                 b4q12_perv1==6~"No Training")),
+         total_wages=b6q9_perv1+b6q10_perv1,
+         sector=as.factor(b1q3_perv1),
+         gender=as.factor(b4q5_perv1),
+         general_education=as.factor(case_when(b4q9_perv1!=1~"Technical Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(1,2,3)~"No General Education",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(5,6,7,8,10)~"Attended School",
+                                      b4q9_perv1==1 & b4q8_perv1 %in% c(11,12,13)~"Attended College")))
+
+model=lm(formula = total_wages~training_type+sector+gender+general_education,data_model)
+
+summary(model)
+  
+```
 
 ```{r}
 #General Education
-plfs_2024_perv1%>%
+per_fv_2023%>%
    type.convert(as.is=T)%>%
    mutate(dummy_area="All India",
           age_group=case_when(b4q6_perv1<15~"0-15",
@@ -75,7 +94,7 @@ plfs_2024_perv1%>%
     filter(age_group %in% c("15-59"))%>% # Age filter
   crosstab(x=b4q5_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
 
-plfs_2024_perv1%>%
+per_fv_2023%>%
    type.convert(as.is=T)%>%
    mutate(dummy_area="All India",
           age_group=case_when(b4q6_perv1<15~"0-15",
@@ -86,8 +105,11 @@ plfs_2024_perv1%>%
                                       b4q9_perv1==1 & b4q8_perv1 %in% c(1,2,3)~"No General Education",
                                       b4q9_perv1==1 & b4q8_perv1 %in% c(5,6,7,8,10)~"Attended School",
                                       b4q9_perv1==1 & b4q8_perv1 %in% c(11,12,13)~"Attended College"))%>%
-    filter(age_group %in% c("15-59") & (b5pt1q3_perv1<=81 | b5pt1q7_perv1==1) )%>% # Age and working Status filter
-  crosstab(x=b1q3_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+    filter(age_group %in% c("15-59"))%>% # Age and working Status filter
+   filter(b1q3_perv1==2)%>%
+  #crosstab(x=b1q3_perv1,y=general_education,weight = weight_f,unwt_n = TRUE)
+  crosstab_3way(x=b4q5_perv1,z=general_education,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+
 
 
 ```
