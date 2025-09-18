@@ -3,18 +3,21 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+```{r}
+library(tidyverse)
+library(pollster)
+```
+ 
 
 ```{r}
 per_fv_2023=read_parquet("./data/financial year/plfs_per_fv_2023.parquet")
-hh_fv_2022=read_parquet("./data/financial year/plfs_hh_v1_2022.parquet")
+plfs_2023_hhv1=read_parquet("./data/financial year/plfs_hh_v1_2023.parquet")
 ```
 
 ```{r}
 per_fv_2023=per_fv_2023%>%
   mutate(nic_2digit_principal=substr(b5pt1q5_perv1,1,2),
+         nic_2digit_subsidiary=substr(b5pt2q5_perv1,1,2),
          nic_3digit_principal=substr(b5pt1q5_perv1,1,3),
          nco_1digit_principal=substr(b5pt1q6_perv1,1,1))%>%
   type.convert(as.is=T)%>%
@@ -29,6 +32,63 @@ per_fv_2023=per_fv_2023%>%
          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
          working_age_yn=age_group %in% c("15-29","30-49","50-59"),"Yes","No")
 ```
+
+
+
+```{r}
+#Labour force
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59") &
+          labour_force == "Yes"
+      ) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59")) %>% select(weight_f))
+
+#Labour force: Female
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59") &
+          labour_force == "Yes" & 
+          b4q5_perv1==2) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59") & b4q5_perv1==2) %>% select(weight_f))
+
+#Labour force: Rural Female
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59","60 and Above") &
+          labour_force == "Yes" & 
+          b4q5_perv1==2 & 
+          b1q3_perv1==1) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59","60 and Above") & b4q5_perv1==2 & b1q3_perv1==1) %>% select(weight_f))
+
+#Labour force: Rural Female (15-29)
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("60 and Above") &
+          labour_force == "Yes" & 
+          b4q5_perv1==2 & 
+          b1q3_perv1==2) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("60 and Above") & b4q5_perv1==2 & b1q3_perv1==2
+                                             ) %>% select(weight_f))
+
+#Labour force: Rural Female (15-49)
+sum(per_fv_2023 %>%
+      filter(
+        b4q6_perv1>=49 & b4q6_perv1<59 &
+          labour_force == "Yes" & 
+          b4q5_perv1==2 & 
+          b1q3_perv1==2) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter( b4q6_perv1>=49 & b4q6_perv1<59 & b4q5_perv1==2 & b1q3_perv1==2) %>% select(weight_f))
+#Labour force: Rural Male (15-49)
+sum(per_fv_2023 %>%
+      filter(
+        b4q6_perv1>=18 & b4q6_perv1<=25 &
+          labour_force == "Yes" & 
+          b4q5_perv1==1 & 
+          b1q3_perv1==1) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter( b4q6_perv1>=18 & b4q6_perv1<=25 & b4q5_perv1==1 & b1q3_perv1==1) %>% select(weight_f))
+```
+
 
 ```{r}
 #b5pt1q9_perv1: principal enterprise type code, 
@@ -48,5 +108,51 @@ per_fv_2023 %>%
     unwt_n = TRUE,
     format = "long"
   )
+```
+
+```{r}
+per_fv_2023 %>%
+  mutate(enterprise_type=if_else(worker_yn=="Yes" & is.na(b5pt1q9_perv1),b5pt2q8_perv1,b5pt1q9_perv1))%>%
+  filter(working_age_yn == TRUE &
+           worker_yn == "Yes") %>%
+  crosstab_3way(
+    z = b4q5_perv1,
+    x=b1q3_perv1,
+    y = b5pt1q3_perv1,
+    weight = weight_f,
+    unwt_n = TRUE,
+    format = "long"
+  )
+```
+
+
+```{r}
+
+per_fv_2023%>%
+  mutate(nic_code_usual=case_when(working_age_yn == TRUE &
+           worker_yn == "Yes" & is.na(nic_2digit_principal)~nic_2digit_subsidiary,
+           b4q6_perv1>=15 & b4q6_perv1<30 &
+           worker_yn == "Yes" & !is.na(nic_2digit_principal)~nic_2digit_principal,
+           worker_yn=="No"~NA))%>%
+ filter(working_age_yn == TRUE &
+          age_group %in% c("15-29","30-49","50-59","60 and Above"))%>%
+  crosstab(
+    x=dummy_area,
+    y = nic_code_usual,
+    weight = weight_f,
+    unwt_n = TRUE,
+    format="long"
+  )
+```
+
+```{r}
+per_fv_2023%>%
+  merge(plfs_2023_hhv1%>% #Merge for Caste
+          type.convert(as.is=T)%>%
+          select(3,13:16,24),
+        by.x = c("qtr_perv1","b1q1_perv1","b1q13_perv1","b1q14_perv1","b1q15_perv1"),
+        by.y =c("qtr_hhv1","b1q1_hhv1","b1q13_hhv1","b1q14_hhv1","b1q15_hhv1"),
+        all.x = TRUE)%>%
+  crosstab(x=state_perv1,y=b3q4_hhv1,weight = weight_f,unwt_n = TRUE)#caste
 ```
 

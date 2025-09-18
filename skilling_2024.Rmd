@@ -65,7 +65,8 @@ data_model=per_fv_2023 %>%
                                  b4q12_perv1 %in% c(1,2,3,4,5)~"Informal",
                                  b4q12_perv1==6~"No Training")),
          total_wages=b6q9_perv1+b6q10_perv1,
-         sector=as.factor(b1q3_perv1),
+         sector=as.factor(case_when(b1q3_perv1==1~Rural,
+                                    b1q3_perv1==2~Urban)),
          gender=as.factor(b4q5_perv1),
          general_education=as.factor(case_when(b4q9_perv1!=1~"Technical Education",
                                       b4q9_perv1==1 & b4q8_perv1 %in% c(1,2,3)~"No General Education",
@@ -500,5 +501,9 @@ plfs_2024_perv1 %>%
   type.convert(as.is=T)%>%
   filter(age_group %in% c("15-59"))%>%
   crosstab(y=type_of_employment,x=b4q12_perv1,weight = weight_f,format = "wide",unwt_n = TRUE)
+```
+
+```{r}
+prop.test(x = 220, n = 13027, conf.level = 0.95, correct = FALSE)
 ```
 

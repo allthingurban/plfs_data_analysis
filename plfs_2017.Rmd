@@ -8,6 +8,7 @@ output: html_notebook
 library(pollster)
 library(tidyverse)
 library(arrow)
+library(googledrive)
 ```
 
 
@@ -33,7 +34,7 @@ per_fv_2017=per_fv_2017%>%
                               b4q6_per_fv>=60~"60 and Above"),
          labour_force=if_else(b5pt1q3_per_fv<=81 | b5pt1q7_per_fv==1,"Yes","No"),
          worker_yn=if_else(b5pt1q3_per_fv<81 | b5pt1q7_per_fv==1,"Yes","No"),
-         weight_f =  if_else(NSS_per_fv==NSC_per_fv,MULT_per_fv/400,MULT_per_fv/800),
+         weight_f =  if_else(NSS_per_fv==NSC_per_fv,MULT_per_fv/100,MULT_per_fv/200),
          working_age_yn=age_group %in% c("15-29","30-49","50-59"),"Yes","No")
 ```
 
@@ -79,6 +80,35 @@ female_workin_age_pop=sum(per_fv_2017%>%
 ```
 
 
+```{r}
+#Labour force
+sum(per_fv_2017 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59") &
+          labour_force == "Yes"
+      ) %>% select(weight_f)) / sum(per_fv_2017 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59")) %>% select(weight_f))
+
+#Labour force: Female
+sum(per_fv_2017 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59","60 and Above") &
+          labour_force == "Yes" & 
+          b4q5_per_fv==2) %>% select(weight_f)) / sum(per_fv_2017 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59","60 and Above") & b4q5_per_fv==2) %>% select(weight_f))
+
+#Labour force: Female
+sum(per_fv_2017 %>%
+      filter(
+        b4q6_per_fv>=49 & b4q6_per_fv<59 &
+          labour_force == "Yes" & 
+          b4q5_per_fv==2 & b1q3_per_fv==1) %>% select(weight_f)) / sum(per_fv_2017 %>%
+                                      filter(b4q6_per_fv>=49 & b4q6_per_fv<59 & b4q5_per_fv==2 & b1q3_per_fv==1) %>% select(weight_f))
+
+
+```
+
+
 
 ```{r}
 #b5pt1q9_per_fv: principal enterprise type code, 
@@ -102,16 +132,34 @@ per_fv_2017 %>%
   
 ```
 
+
 ```{r}
-per_fv_2017%>%
-  mutate(location_work=case_when(labour_force=="Yes" & is.na(b5pt1q8_per_fv)~b5pt2q7_per_fv,
-                                 labour_force=="Yes" &!is.na(b5pt1q8_per_fv)~b5pt1q8_per_fv,
-                                 labour_force=="No"~NA))%>%
-  filter(age_group %in% c("15-29","30-49","50-59") & labour_force=="Yes")%>%
-  summarise(sum(weight_f)*100/total_workin_age_pop)
+per_fv_2017 %>%
+  filter(working_age_yn == TRUE &
+           labour_force == "Yes") %>%
+  crosstab_3way(
+    x = b1q3_per_fv,
+    z=b4q5_per_fv,
+    y = b5pt1q3_per_fv,
+    weight = weight_f,
+    unwt_n = TRUE,
+    format = "long"
+  )
+```
 
 
-
+```{r}
+per_fv_2017 %>%
+  mutate(enterprise_type=if_else(worker_yn=="Yes" & is.na(b5pt1q9_per_fv),b5pt2q8_per_fv,b5pt1q9_per_fv))%>%
+  filter(working_age_yn == TRUE &
+           labour_force == "Yes" & b1q3_per_fv==1) %>%
+  crosstab_3way(
+    x = b4q5_per_fv,
+    z=b5pt1q3_per_fv,
+    y = b5pt1q9_per_fv,
+    weight = weight_f,
+    unwt_n = TRUE
+  )
 ```
 
 
@@ -125,10 +173,16 @@ per_fv_2017%>%
 per_fv_2017 %>%
   mutate(ent_type_code=case_when(labour_force=="Yes" & worker_yn=="No" ~ b5pt2q8_per_fv,
                                  labour_force=="Yes" & worker_yn=="Yes"~ b5pt1q9_per_fv,
+                                 labour_force=="No"~NA),
+         location_work=case_when(labour_force=="Yes" & is.na(b5pt1q8_per_fv)~b5pt2q7_per_fv,
+                                 labour_force=="Yes" &!is.na(b5pt1q8_per_fv)~b5pt1q8_per_fv,
                                  labour_force=="No"~NA))%>%
   filter(worker_yn=="Yes" & working_age_yn==TRUE)%>%
   crosstab_3way(x=b1q3_per_fv,z=b4q5_per_fv,y=ent_type_code,weight = weight_f)
 ```
+
+
+
 ```{r}
 per_fv_2017 %>%
   mutate(nic_2digit_code=case_when(labour_force=="Yes" & worker_yn=="No" ~ nic_2digit_subsidiary,

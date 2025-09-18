@@ -1,0 +1,42 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+source("library_load.R")
+```
+
+
+```{r}
+#Rural/Urban 
+per_fv_2023 %>%
+  crosstab_3way(x=b1q3_perv1,z=b1q11_perv1,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+
+per_fv_2023 %>%
+  crosstab(x=b1q3_perv1,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+
+#Gender
+per_fv_2023 %>%
+  crosstab_3way(x=b4q5_perv1,z=b1q11_perv1,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+```
+
+```{r}
+#Labour force
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59") &
+          labour_force == "Yes" & b1q11_perv1==1
+      ) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59") & b1q11_perv1==1) %>% select(weight_f))
+
+#Labour force
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59") &
+          labour_force == "Yes" & b1q11_perv1==2
+      ) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59") & b1q11_perv1==2) %>% select(weight_f))
+```
+

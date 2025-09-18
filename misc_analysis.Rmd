@@ -1,0 +1,224 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+source("library_load.R")
+
+per_fv_2017=prepare_plfs_data("2017")
+per_fv_2018=prepare_plfs_data("2018")
+per_fv_2019=prepare_plfs_data("2019")
+per_fv_2020=prepare_plfs_data("2020")
+per_fv_2021=prepare_plfs_data("2021")
+per_fv_2022=prepare_plfs_data("2022")
+per_fv_2023=prepare_plfs_data("2023")
+```
+
+
+```{r}
+#D=Distribution of people who are engaged in subsidiary economic for different principal economic status
+cbind(per_fv_2023 %>%
+  filter(b4q6_perv1>=15 & worker_yn=="Yes" & b5pt1q3_perv1<81)%>%
+  crosstab(x= b5pt1q3_perv1,y = b5pt1q7_perv1,weight = weight_f)%>%select(1,2)%>%rename("2023"="1"),
+
+per_fv_2022 %>%
+  filter(b4q6_perv1>=15 & worker_yn=="Yes"& b5pt1q3_perv1<81)%>%
+  crosstab(x= b5pt1q3_perv1,y = b5pt1q7_perv1,weight = weight_f)%>%select(2)%>%rename("2022"="1"),
+
+per_fv_2021 %>%
+  filter(b4q6_perv1>=15 & worker_yn=="Yes"& b5pt1q3_perv1<81)%>%
+  crosstab(x= b5pt1q3_perv1,y = b5pt1q7_perv1,weight = weight_f)%>%select(2)%>%rename("2021"="1"),
+per_fv_2020 %>%
+  filter(b4q6_perv1>=15 & worker_yn=="Yes"& b5pt1q3_perv1<81)%>%
+  crosstab(x= b5pt1q3_perv1,y = b5pt1q7_perv1,weight = weight_f)%>%select(2)%>%rename("2020"="1"),
+per_fv_2019 %>%
+  filter(b4q6_per_fv>=15 & worker_yn=="Yes"& b5pt1q3_per_fv<81)%>%
+  crosstab(x= b5pt1q3_per_fv,y = b5pt1q7_per_fv,weight = weight_f)%>%select(2)%>%rename("2019"="1"),
+per_fv_2018 %>%
+  filter(b4q6_per_fv>=15 & worker_yn=="Yes"& b5pt1q3_per_fv<81)%>%
+  crosstab(x= b5pt1q3_per_fv,y = b5pt1q7_per_fv,weight = weight_f)%>%select(2)%>%rename("2018"="1"),
+per_fv_2017 %>%
+  filter(b4q6_per_fv>=15 & worker_yn=="Yes"& b5pt1q3_per_fv<81)%>%
+  crosstab(x= b5pt1q3_per_fv,y = b5pt1q7_per_fv,weight = weight_f)%>%select(2)%>%rename("2017"="1"))
+```
+
+
+
+```{r}
+#Rural/Urban segregation
+cbind(
+  per_fv_2023 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b1q3_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = b1q3_perv1, value = "1") %>% rename("urban_2023" =
+                                                                                 "2", "rural_2023" = "1"),
+  
+  per_fv_2022 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b1q3_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = b1q3_perv1, value = "1") %>% rename("urban_2022" =
+                                                                                 "2", "rural_2022" = "1")%>%select(2,3),
+  
+  per_fv_2021 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b1q3_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = b1q3_perv1, value = "1") %>% rename("urban_2021" =
+                                                                                 "2", "rural_2021" = "1")%>%select(2,3),
+  
+  per_fv_2020 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b1q3_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = b1q3_perv1, value = "1") %>% rename("urban_2020" =
+                                                                                 "2", "rural_2020" = "1")%>%select(2,3),
+  
+  per_fv_2019 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b1q3_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b1q3_per_fv", value = "1") %>% rename("urban_2019" =
+                                                                                 "2", "rural_2019" = "1")%>%select(2,3),
+  
+  per_fv_2018 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b1q3_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b1q3_per_fv", value = "1") %>% rename("urban_2018" =
+                                                                                 "2", "rural_2018" = "1")%>%select(2,3),
+  
+  per_fv_2017 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b1q3_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1,2,3) %>% spread(key = "b1q3_per_fv", value = "1") %>% rename("urban_2017" =
+                                                                                 "2", "rural_2017" = "1")%>%select(2,3)
+)%>%select(1,2,4,6,8,10,12,14,3,5,7,9,11,13,15)
+```
+
+```{r}
+#Male/Female segregation
+cbind(
+  per_fv_2023 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b4q5_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_perv1", value = "1") %>% rename("male_2023" =
+                                                                                 "1", "female_2023" = "2")%>%select(1,2,3),
+  
+  per_fv_2022 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b4q5_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_perv1", value = "1") %>% rename("male_2022" =
+                                                                                 "1", "female_2022" = "2")%>%select(2,3),
+  
+  per_fv_2021 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b4q5_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_perv1", value = "1") %>% rename("male_2021" =
+                                                                                 "1", "female_2021" = "2")%>%select(2,3),
+  
+  per_fv_2020 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81) %>%
+    crosstab_3way(
+      x = b4q5_perv1 ,
+      z = b5pt1q3_perv1,
+      y = b5pt1q7_perv1,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_perv1", value = "1") %>% rename("male_2020" =
+                                                                                 "1", "female_2020" = "2")%>%select(2,3),
+  
+  per_fv_2019 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b4q5_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_per_fv", value = "1") %>% rename("male_2019" =
+                                                                                 "1", "female_2019" = "2")%>%select(2,3),
+  
+  per_fv_2018 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b4q5_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1, 2, 3) %>% spread(key = "b4q5_per_fv", value = "1") %>% rename("male_2018" =
+                                                                                 "1", "female_2018" = "2")%>%select(2,3),
+  
+  per_fv_2017 %>%
+    filter(b4q6_per_fv >= 15 &
+             worker_yn == "Yes" & b5pt1q3_per_fv < 81) %>%
+    crosstab_3way(
+      x = b4q5_per_fv ,
+      z = b5pt1q3_per_fv,
+      y = b5pt1q7_per_fv,
+      weight = weight_f
+    ) %>% select(1,2,3) %>% spread(key = "b4q5_per_fv", value = "1") %>% rename("male_2017" =
+                                                                                 "1", "female_2017" = "2")%>%select(2,3)
+)%>%select(1,2,4,6,8,10,12,14,3,5,7,9,11,13,15)
+```
+
+```{r}
+per_fv_2023 %>%
+    filter(b4q6_perv1 >= 15 & worker_yn == "Yes" &
+             b5pt1q3_perv1 < 81 & b5pt1q7_perv1==1) %>%
+    crosstab(
+      x = dummy_area,
+      y = b5pt2q3_perv1,
+      format = "long",
+      weight = weight_f
+    )%>%rename("2023"="pct")
+```
+

@@ -51,3 +51,14 @@ per_fv_2021 %>%
   )
 ```
 
+```{r}
+per_fv_2021%>%
+  merge(hh_fv_2021%>% #Merge for Caste
+          type.convert(as.is=T)%>%
+          select(3,13:16,24),
+        by.x = c("qtr_perv1","b1q1_perv1","b1q13_perv1","b1q14_perv1","b1q15_perv1"),
+        by.y =c("qtr_hhv1","b1q1_hhv1","b1q13_hhv1","b1q14_hhv1","b1q15_hhv1"),
+        all.x = TRUE)%>%
+  crosstab(x=state_perv1,y=b3q4_hhv1,weight = weight_f,unwt_n = TRUE)#caste
+```
+
