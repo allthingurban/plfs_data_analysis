@@ -156,3 +156,42 @@ per_fv_2023%>%
   crosstab(x=state_perv1,y=b3q4_hhv1,weight = weight_f,unwt_n = TRUE)#caste
 ```
 
+This does not contains the employment code 21: working in household enterprise
+```{r}
+per_fv_2023%>%
+  merge(plfs_2023_hhv1%>% #Merge for Caste
+          type.convert(as.is=T)%>%
+          select(3,13:16,24),
+        by.x = c("qtr_perv1","b1q1_perv1","b1q13_perv1","b1q14_perv1","b1q15_perv1"),
+        by.y =c("qtr_hhv1","b1q1_hhv1","b1q13_hhv1","b1q14_hhv1","b1q15_hhv1"),
+        all.x = TRUE)%>%
+  filter(working_age_yn==TRUE & b6q5_perv1 <91 & b1q3_perv1==1 & total_wages > 0) %>%
+mutate(total_earnings=b6q9_perv1+b6q10_perv1,
+      quantil_n=ntile(total_wages,n = 5),
+      all_india="Yes",
+      employment_status= case_when(b6q5_perv1 %in% c(11,12,21,61,62)~"self employed",
+                                   b6q5_perv1 %in% c(31,71,72,81,82)~"Salaried",
+                                   b6q5_perv1 %in% c(41,42,51)~"Casual Labour"))%>% filter(employment_status=="Casual Labour")%>%
+  #crosstab(x = all_india,y =b3q4_hhv1,weight = weight_f,unwt_n = TRUE)
+  group_by(quantil_n,b3q4_hhv1)%>%
+  summarise(mean_wage=weighted.mean(total_wages,w = weight_f,na.rm=TRUE))%>%
+  spread(key = b3q4_hhv1, value = mean_wage)
+  
+```
+
+```{r}
+per_fv_2023$total_wages=apply(per_fv_2023 %>% select(64,68,74,78,84,88,94,98,104,108,114,118,124,128), 1, function(row) sum(row[row >= 0 & !is.na(row)], is.na(row)))
+
+
+per_fv_2023%>%
+  merge(plfs_2023_hhv1%>% #Merge for Caste
+          type.convert(as.is=T)%>%
+          select(3,13:16,24),
+        by.x = c("qtr_perv1","b1q1_perv1","b1q13_perv1","b1q14_perv1","b1q15_perv1"),
+        by.y =c("qtr_hhv1","b1q1_hhv1","b1q13_hhv1","b1q14_hhv1","b1q15_hhv1"),
+        all.x = TRUE)%>%
+  mutate(total_earnings=if)
+  filter(working_age_yn==TRUE & b6q5_perv1 <91 & b1q3_perv1==1)%>%
+  group_by(b6q5_perv1)%>% summarise(avg_earnings=)
+```
+
