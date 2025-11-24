@@ -195,3 +195,24 @@ per_fv_2023%>%
   group_by(b6q5_perv1)%>% summarise(avg_earnings=)
 ```
 
+```{r}
+#Type of training
+
+per_fv_2020 %>%
+  mutate(training_type = as.factor(
+    case_when(
+      b4q12_perv1 == 1 ~ "Formal",
+      b4q12_perv1 == 4 ~ "Semi-Formal",
+      b4q12_perv1 %in% c(2, 3, 5) ~ "Informal",
+      b4q12_perv1 == 6 ~ "No Training")),
+     employment_status= as.factor(case_when(b6q5_perv1 %in% c(11,12,21,61,62)~"self employed",
+                                   b6q5_perv1 %in% c(31,71,72,81,82)~"Salaried",
+                                   b6q5_perv1 %in% c(41,42,51)~"Casual Labour"))) %>%
+  filter(labour_force == "Yes") %>%
+  crosstab(x = training_type, y = employment_status, weight = weight_f,unwt_n = TRUE)
+```
+
+```{r}
+
+```
+

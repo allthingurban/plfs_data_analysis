@@ -32,6 +32,21 @@ per_fv_2021=per_fv_2021%>%
 ```
 
 ```{r}
+per_fv_2021 %>%
+  mutate(training_type = as.factor(
+    case_when(
+      b4q12_perv1 == 1 ~ "Formal",
+      b4q12_perv1 == 4 ~ "Semi-Formal",
+      b4q12_perv1 %in% c(2, 3, 5) ~ "Informal",
+      b4q12_perv1 == 6 ~ "No Training"
+    )
+  )) %>%
+  filter(labour_force == "Yes") %>%
+  crosstab_3way(x = b1q3_perv1,z=b4q5_perv1,y = training_type, weight = weight_f,unwt_n = TRUE)
+```
+
+
+```{r}
 #b5pt1q9_perv1: principal enterprise type code, 
 #b4q5_perv1: Sex,
 #b5pt1q9_perv1:Location of Enterprise,

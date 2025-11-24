@@ -15,9 +15,20 @@ library(arrow)
 ```
 
 ```{r}
+#Type of training
 
-plfs_2024_hhv1=read_parquet("data/calendar_year/2024/plfs_2024_hhv1.parquet")
-plfs_2024_perv1=read_parquet("data/calendar_year/2024/plfs_2024_perv1.parquet")
+per_fv_2023 %>%
+  mutate(training_type = as.factor(
+    case_when(
+      b4q12_perv1 == 1 ~ "Formal",
+      b4q12_perv1 == 4 ~ "Semi-Formal",
+      b4q12_perv1 %in% c(2, 3, 5) ~ "Informal",
+      b4q12_perv1 == 6 ~ "No Training"
+    )
+  )) %>%
+  filter(labour_force == "Yes") %>%
+  crosstab_3way(x = b1q3_perv1,z=b4q5_perv1, y = training_type, weight = weight_f,unwt_n = TRUE)
+           
 ```
 
 col. (8):

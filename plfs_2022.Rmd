@@ -32,6 +32,12 @@ per_fv_2022=per_fv_2022%>%
 ```
 
 ```{r}
+
+```
+
+
+
+```{r}
 #b5pt1q9_perv1: principal enterprise type code, 
 #b4q5_perv1: Sex,
 #b5pt1q9_perv1:Location of Enterprise,
@@ -60,5 +66,19 @@ per_fv_2022%>%
         by.y =c("qtr_hhv1","b1q1_hhv1","b1q13_hhv1","b1q14_hhv1","b1q15_hhv1"),
         all.x = TRUE)%>%
   crosstab(x=state_perv1,y=b3q4_hhv1,weight = weight_f,unwt_n = TRUE)#caste
+```
+
+```{r}
+per_fv_2022 %>%
+  mutate(training_type = as.factor(
+    case_when(
+      b4q12_perv1 == 1 ~ "Formal",
+      b4q12_perv1 == 4 ~ "Semi-Formal",
+      b4q12_perv1 %in% c(2, 3, 5) ~ "Informal",
+      b4q12_perv1 == 6 ~ "No Training"
+    )
+  )) %>%
+  filter(labour_force == "Yes") %>%
+  crosstab(x = dummy_area,y = training_type, weight = weight_f,unwt_n = TRUE)
 ```
 

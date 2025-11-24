@@ -10,6 +10,10 @@ per_fv_2020=read_parquet("./data/financial year/plfs_per_fv_2020.parquet")
 hh_fv_2020=read_parquet("./data/financial year/plfs_hh_v1_2019.parquet")
 ```
 
+```{r}
+per_fv_2020 = prepare_plfs_data("2020")
+```
+
 
 ```{r}
 per_fv_2020=per_fv_2020%>%
@@ -28,6 +32,27 @@ per_fv_2020=per_fv_2020%>%
          weight_f =  if_else(NSS_perv1==NSC_perv1,mult_perv1/400,mult_perv1/800),
          working_age_yn=age_group %in% c("15-29","30-49","50-59"),"Yes","No")
 ```
+
+
+```{r}
+per_fv_2020=prepare_plfs_data("2020")
+```
+
+
+```{r}
+per_fv_2020 %>%
+  mutate(training_type = as.factor(
+    case_when(
+      b4q12_perv1 == 1 ~ "Formal",
+      b4q12_perv1 == 4 ~ "Semi-Formal",
+      b4q12_perv1 %in% c(2, 3, 5) ~ "Informal",
+      b4q12_perv1 == 6 ~ "No Training"
+    )
+  )) %>%
+  filter(labour_force == "Yes") %>%
+  crosstab_3way(x = b1q3_perv1,z=b4q5_perv1,y = training_type, weight = weight_f,unwt_n = TRUE)
+```
+
 
 ```{r}
 #b5pt1q9_perv1: principal enterprise type code, 

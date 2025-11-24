@@ -20,23 +20,35 @@ per_fv_2023 %>%
 #Gender
 per_fv_2023 %>%
   crosstab_3way(x=b4q5_perv1,z=b1q11_perv1,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+
+#Caste and Skilling
+per_fv_2023 %>%
+  crosstab_3way(x=b3q4_hhv1,z=b1q11_perv1,y=b4q12_perv1,weight = weight_f,unwt_n = TRUE)
+
 ```
 
 ```{r}
-#Labour force
-sum(per_fv_2023 %>%
-      filter(
-        age_group %in% c("15-29", "30-49", "50-59") &
-          labour_force == "Yes" & b1q11_perv1==1
-      ) %>% select(weight_f)) / sum(per_fv_2023 %>%
-                                      filter(age_group %in% c("15-29", "30-49", "50-59") & b1q11_perv1==1) %>% select(weight_f))
+
+per_fv_2023$MULT_final<-ifelse(per_fv_2023$NSS_perv1==per_fv_2023$NSC_perv1, per_fv_2023$mult_perv1/400, per_fv_2023$mult_perv1/800)
+
+sum(per_fv_2023$MULT_final)
+
+per_fv_2023%>%group_by(b1q11_perv1)%>%summarise(sum_sample=sum(MULT_final))
+
+per_fv_2023 %>% filter (b5pt1q3_perv1 <= 81 | b5pt1q7_perv1 == 1) %>% summarise(LFPR_Uttarakhand=sum(MULT_final)*100/1204301761)
 
 #Labour force
 sum(per_fv_2023 %>%
       filter(
-        age_group %in% c("15-29", "30-49", "50-59") &
-          labour_force == "Yes" & b1q11_perv1==2
-      ) %>% select(weight_f)) / sum(per_fv_2023 %>%
-                                      filter(age_group %in% c("15-29", "30-49", "50-59") & b1q11_perv1==2) %>% select(weight_f))
+        age_group %in% c("15-29", "30-49", "50-59","60 and Above") &
+          labour_force == "Yes") %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59","60 and Above")) %>% select(weight_f))
+
+#Labour force
+sum(per_fv_2023 %>%
+      filter(
+        age_group %in% c("15-29", "30-49", "50-59","60 and Above") &
+          labour_force == "Yes" & b1q11_perv1==2) %>% select(weight_f)) / sum(per_fv_2023 %>%
+                                      filter(age_group %in% c("15-29", "30-49", "50-59","60 and Above") & b1q11_perv1==2) %>% select(weight_f))
 ```
 
